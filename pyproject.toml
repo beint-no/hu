@@ -5,7 +5,6 @@ description = "Hugo utils. Automate tasks needed for hugo static site generator 
 requires-python = ">=3.13"
 dependencies = [
     "click>=8.3.0",
-    "hatchling>=1.27.0",
 ]
 
 [project.scripts]
