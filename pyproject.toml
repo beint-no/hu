@@ -4,8 +4,13 @@ version = "0.1.0"
 description = "Hugo utils. Automate tasks needed for hugo static site generator projects"
 requires-python = ">=3.13"
 dependencies = [
-    "click>=8.1.7",
+    "click>=8.3.0",
+    "hatchling>=1.27.0",
 ]
 
 [project.scripts]
 hu = "hu.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
