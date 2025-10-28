@@ -1,0 +1,6 @@
+[project]
+name = "hu"
+version = "0.1.0"
+description = "Hugo utils. Automate tasks needed for hugo static site generator projects"
+requires-python = ">=3.13"
+dependencies = []
