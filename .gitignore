@@ -11,3 +11,4 @@ __pycache__/
 
 # uv caches (optional)
 .uv/
+uv.lock
