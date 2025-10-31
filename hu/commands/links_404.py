@@ -34,13 +34,17 @@ def is_internal_link(link: str) -> bool:
     return not parsed.scheme or parsed.scheme == 'file'
 
 
-def check_internal_link(link: str, base_path: Path, hugo_root: Path) -> bool:
+def check_internal_link(link: str, base_path: Path, content_root: Path, hugo_root: Path) -> bool:
     """Check if an internal link exists.
+
+    Uses Hugo leaf-bundle convention: a URL like `/section/slug` should
+    correspond to `content/section/slug/index.md`.
 
     Args:
         link: The link to check
         base_path: The path of the markdown file containing the link
-        hugo_root: The root of the Hugo project
+        content_root: The path to the Hugo `content` directory
+        hugo_root: The root of the Hugo project (used for resolving relative file links)
 
     Returns:
         True if the link target exists, False otherwise
@@ -63,15 +67,35 @@ def check_internal_link(link: str, base_path: Path, hugo_root: Path) -> bool:
     if not link_without_query:
         return True
 
-    # Resolve the link relative to the base path
-    if link_without_query.startswith('/'):
-        # Absolute path from Hugo root
-        target = hugo_root / link_without_query.lstrip('/')
-    else:
-        # Relative path
-        target = (base_path.parent / link_without_query).resolve()
+    # Normalize trailing slashes (keep root '/')
+    if len(link_without_query) > 1:
+        link_without_query = link_without_query.rstrip('/')
 
-    return target.exists()
+    # Absolute site-root paths map to content leaf bundles
+    if link_without_query.startswith('/'):
+        # If it looks like a leaf-bundle URL (no file extension), verify content/.../index.md
+        path_part = link_without_query.lstrip('/')
+        suffix = Path(path_part).suffix
+        if suffix:
+            # Has an extension (likely asset or file under /static) — skip strict checking here
+            # Treat as valid for the purpose of leaf-bundle page existence check
+            return True
+        dir_path = content_root / path_part
+        expected_index = dir_path / 'index.md'
+        expected_list = dir_path / '_index.md'
+        return expected_index.exists() or expected_list.exists()
+
+    # Relative links: resolve from the folder of the current markdown (a leaf bundle folder)
+    rel_path = Path(link_without_query)
+    if rel_path.suffix:
+        # If a file is explicitly referenced (e.g., index.md or image), accept existence on disk
+        target = (base_path.parent / rel_path).resolve()
+        return target.exists()
+
+    # Otherwise, treat as a reference to another leaf bundle folder relative to this one
+    candidate_dir = (base_path.parent / rel_path).resolve()
+    expected_index = candidate_dir / 'index.md'
+    return expected_index.exists()
 
 
 def find_broken_links(content_dir: Path, hugo_root: Path) -> dict[str, list[str]]:
@@ -95,7 +119,7 @@ def find_broken_links(content_dir: Path, hugo_root: Path) -> dict[str, list[str]
 
         file_broken_links = []
         for link in links:
-            if is_internal_link(link) and not check_internal_link(link, md_file, hugo_root):
+            if is_internal_link(link) and not check_internal_link(link, md_file, content_dir, hugo_root):
                 file_broken_links.append(link)
 
         if file_broken_links:
