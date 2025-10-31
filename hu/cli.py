@@ -2,6 +2,7 @@
 
 import click
 from hu.commands import links_404
+from hu.commands import svg as svg_cmd
 
 
 @click.group()
@@ -13,6 +14,7 @@ def main():
 
 # Register commands
 main.add_command(links_404.check_404_links, name="404-links")
+main.add_command(svg_cmd.svg, name="svg")
 
 
 if __name__ == "__main__":
