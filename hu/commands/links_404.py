@@ -142,9 +142,10 @@ def find_broken_links(content_dir: Path, hugo_root: Path) -> dict[str, list[str]
     help='Path to Hugo project root (default: current directory)'
 )
 def check_404_links(content_dir: Path, hugo_root: Path):
-    """Find broken links in Hugo markdown files."""
-    click.echo(f"Scanning for broken links in {content_dir}...")
+    """Find broken links in Hugo markdown files.
 
+    Output is plain text without colors or emojis, structured for easy parsing by agents.
+    """
     # Make paths absolute
     content_dir = content_dir.resolve()
     hugo_root = hugo_root.resolve()
@@ -156,16 +157,22 @@ def check_404_links(content_dir: Path, hugo_root: Path):
     broken_links = find_broken_links(content_dir, hugo_root)
 
     if not broken_links:
-        click.secho("✓ No broken links found!", fg='green')
+        # Plain, minimal success output
+        click.echo("status: ok")
+        click.echo("broken_files: 0")
         return
 
-    click.secho(f"\n✗ Found broken links in {len(broken_links)} file(s):\n", fg='red')
+    # Deterministic ordering for stable parsing
+    files_sorted = sorted(broken_links.keys())
 
-    for file_path, links in broken_links.items():
-        click.secho(f"{file_path}:", fg='yellow')
-        for link in links:
+    click.echo("status: error")
+    click.echo(f"broken_files: {len(files_sorted)}")
+
+    for file_path in files_sorted:
+        click.echo(f"file: {file_path}")
+        # Sort links for stability
+        for link in sorted(broken_links[file_path]):
             click.echo(f"  - {link}")
-        click.echo()
 
     # Exit with error code if broken links found
     raise click.exceptions.Exit(1)

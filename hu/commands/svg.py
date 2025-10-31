@@ -4,18 +4,9 @@ This command scans the provided `content` directory for markdown files (`index.m
 reads the frontmatter to extract title/description/summary, and writes an SVG image next to the
 markdown folder named `<folder-name>-image.svg`.
 """
-from __future__ import annotations
 
 from pathlib import Path
 from xml.sax.saxutils import escape
-from typing import Optional
-
-import sys
-
-try:
-    import yaml  # type: ignore
-except Exception:  # pragma: no cover - optional dep
-    yaml = None  # type: ignore
 
 import click
 
@@ -38,14 +29,7 @@ def read_frontmatter(md_path: Path) -> dict:
     if len(parts) < 3:
         return {}
     fm_raw = parts[1]
-    if yaml:
-        try:
-            data = yaml.safe_load(fm_raw) or {}
-            if isinstance(data, dict):
-                return data
-        except Exception:
-            pass
-    # Fallback: basic key:value parse for common keys
+    # Basic key:value parse for common keys
     data = {}
     for line in fm_raw.splitlines():
         if ":" in line:
@@ -117,7 +101,7 @@ def resolve_output_path(folder: Path) -> Path:
     return folder / (folder.name + "-image.svg")
 
 
-def generate_for(md: Path, width=1200, height=630, bg="#f3f4f6", fg="#0b1220") -> Optional[Path]:
+def generate_for(md: Path, width=1200, height=630, bg="#f3f4f6", fg="#0b1220") -> Path | None:
     fm = read_frontmatter(md)
     if not fm:
         return None
@@ -133,23 +117,17 @@ def generate_for(md: Path, width=1200, height=630, bg="#f3f4f6", fg="#0b1220") -
 
 
 @click.command()
-@click.option(
-    "--content-dir",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path("content"),
-    help="Path to Hugo content directory (default: content)",
-)
 @click.option("--width", type=int, default=1200, help="Image width in px (default: 1200)")
 @click.option("--height", type=int, default=630, help="Image height in px (default: 630)")
 @click.option("--bg", type=str, default="#f3f4f6", help="Background color (default: #f3f4f6)")
 @click.option("--fg", type=str, default="#0b1220", help="Foreground color (default: #0b1220)")
-def svg(content_dir: Path, width: int, height: int, bg: str, fg: str):
+def svg(width: int, height: int, bg: str, fg: str):
     """Generate SVG images for markdown files under the content folder.
 
     Scans recursively for `index.md` and `_index.md` and writes
     `<folder-name>-image.svg` into the same folder.
     """
-    content_dir = content_dir.resolve()
+    content_dir = Path("content").resolve()
     if not content_dir.exists():
         click.secho(f"Content directory not found: {content_dir}", fg="red")
         raise click.exceptions.Exit(1)
