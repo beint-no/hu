@@ -130,29 +130,26 @@ def find_broken_links(content_dir: Path, hugo_root: Path) -> dict[str, list[str]
 
 @click.command()
 @click.option(
-    '--content-dir',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default='content',
-    help='Path to Hugo content directory (default: content)'
-)
-@click.option(
     '--hugo-root',
     type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
     default='.',
     help='Path to Hugo project root (default: current directory)'
 )
-def check_404_links(content_dir: Path, hugo_root: Path):
+def check_404_links(hugo_root: Path):
     """Find broken links in Hugo markdown files.
 
+    Assumes the content directory is `<hugo-root>/content`.
     Output is plain text without colors or emojis, structured for easy parsing by agents.
     """
     # Make paths absolute
-    content_dir = content_dir.resolve()
     hugo_root = hugo_root.resolve()
+    content_dir = (hugo_root / 'content').resolve()
 
-    # If content_dir is relative, resolve it from hugo_root
-    if not content_dir.is_absolute():
-        content_dir = (hugo_root / content_dir).resolve()
+    # Validate content directory exists
+    if not content_dir.exists() or not content_dir.is_dir():
+        click.echo("status: error")
+        click.echo(f"error: content directory not found: {content_dir}")
+        raise click.exceptions.Exit(1)
 
     broken_links = find_broken_links(content_dir, hugo_root)
 

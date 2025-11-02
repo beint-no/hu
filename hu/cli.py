@@ -13,6 +13,9 @@ def main():
 
 
 # Register commands
+# New simplified command name as requested: `hu 404`
+main.add_command(links_404.check_404_links, name="404")
+# Keep legacy alias for backward compatibility
 main.add_command(links_404.check_404_links, name="404-links")
 main.add_command(svg_cmd.svg, name="svg")
 
